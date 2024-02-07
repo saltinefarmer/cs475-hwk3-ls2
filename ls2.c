@@ -20,9 +20,6 @@ void test(char* filename, int numTabs){
     
     while((directory = readdir(dir)) != NULL){
 
-        for(int i = 0; i < numTabs; i++){
-            printf("%s", INDENT);
-        }
         char *global_path = malloc(sizeof(char)*4096);
         getcwd(global_path, 4096);
         
@@ -40,7 +37,9 @@ void test(char* filename, int numTabs){
             if(S_ISDIR(link.st_mode)){ // if this is a directory
                 //printf("%s", directory->d_name);
                 if(strcmp(directory->d_name, ".") != 0 && strcmp(directory->d_name, "..") != 0){
-
+                    for(int i = 0; i < numTabs; i++){
+                        printf("%s", INDENT);
+                    }
                     printf("%s/ (directory)\n", directory -> d_name);
                     char *input = malloc(sizeof(directory->d_name)+sizeof(char));
 
@@ -54,6 +53,10 @@ void test(char* filename, int numTabs){
                 }
             }
             else if(S_ISREG(link.st_mode)){ // if it is a regular file
+
+                for(int i = 0; i < numTabs; i++){
+                    printf("%s", INDENT);
+                }
                 printf("%s (%ld bytes)\n", directory -> d_name, link.st_size);
                 
             }
