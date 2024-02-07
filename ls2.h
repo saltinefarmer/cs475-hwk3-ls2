@@ -9,4 +9,6 @@
 
 // TODO: Function declarations here for ls2
 
+void test(char* filename, int numTabs);
+
 #endif
