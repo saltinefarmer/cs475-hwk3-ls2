@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "stack.h"
 #include "ls2.h"
 
@@ -13,21 +14,20 @@ int main(int argc, char* argv[]) {
         printf("./ls2 <path> [exact-match-pattern]\n");
         return (0);
     }
+	if (argc == 2){
+		lsFull(argv[1], 0);
+		return (0);
+	}
+	if (argc == 3){
+		stack_t *s = initstack();
+		lsExact(argv[1], argv[2], 0, s);
 
-	test(argv[1], 0);
-	return (0);
+		printstack(s);
+		freestack(s);
+		return (0);
+	}
 
 	// stack stores the lines to print out
-	stack_t *s = initstack();
-
-	push(s, "Hello1");
-	push(s, "Hello2");
-	push(s, "Hello3");
-
-	// print stack
-	printstack(s);
-
-	// free up stack
-	freestack(s);
+	
 	return 0;
 }

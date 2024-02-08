@@ -9,6 +9,8 @@
 
 // TODO: Function declarations here for ls2
 
-void test(char* filename, int numTabs);
+void lsFull(char* filename, int numTabs);
+
+int lsExact(char* filename, char* searchFile, int numTabs, stack_t* stack);
 
 #endif
