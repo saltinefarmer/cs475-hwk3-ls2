@@ -1,3 +1,10 @@
+/*
+ * ls2.c
+ *
+ *  Created on: 2/8/24
+ *      Author: Silver Lippert
+ */
+
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,9 +14,16 @@
 #include <errno.h>
 #include "ls2.h"
 
-
-// TODO: function definitions here for ls2
-// System calls: opendir(), readdir(), closedir()
+/**
+ * lsExact recurses through the given directory name, and looks for files
+ * with the exact specified name. Will create a heap with the files, 
+ * and the directories required to traverse through to reach that file
+ * 
+ * @param char* filename - the file to search through
+ * @param char* searchFile - the name of the desired file(s)
+ * @param int numTabs - the depth of the recursion to indicate how much tabbing needs to be printed
+ * @param stack_t* stack - Stack used to store the files traversed
+*/
 
 int lsExact(char* filename, char* searchFile, int numTabs, stack_t* stack){
     
@@ -47,70 +61,78 @@ int lsExact(char* filename, char* searchFile, int numTabs, stack_t* stack){
                 // if not a parent directory
                 if(strcmp(directory->d_name, ".") != 0 && strcmp(directory->d_name, "..") != 0){
                     
-                    char *input = malloc(sizeof(directory->d_name)+sizeof(char));
+                    char *input = malloc(sizeof(directory->d_name)+sizeof(char)); // file name to pass to recursion
                     
+                    // I am so sorry if all my string operations are gross, i dont know how else to do it
                     strcpy(input, filename);
                     strcat(input, directory->d_name);
                     strcat(input, "/");
 
-                    found2 = lsExact(input, searchFile, numTabs+1, stack);
+                    found2 = lsExact(input, searchFile, numTabs+1, stack); // recurse
                     free(input);
                     input = NULL;
                     
-                    if (found2 == 1){
-                        found = 1;
-                        found2 = 0;
+                    if (found2 == 1){ // if file is found further down
+                        found = 1; // set return value to 1 so parent directory knows
+                        found2 = 0; // reset in case another directory in this one has another matching file
 
+                        // current directory's name
                         char *result = malloc(sizeof(directory->d_name)+(sizeof(INDENT)*numTabs));
                         
-                        strcpy(result, "");
-                        for(int i = 0; i < numTabs; i++){
+                        strcpy(result, ""); // reset the string in case old data is there
+                        for(int i = 0; i < numTabs; i++){ // set number of tabs
                             strcat(result, INDENT);
                         }  
 
                         strcat(result, directory->d_name);
                         strcat(result, "/ (directory)");
 
-                        push(stack, result);
+                        push(stack, result); // add to stack!
                         
                     }
-                    
-                
                 }
             }
 
             else if(S_ISREG(link.st_mode)){ // if it is a regular file
-                if(strcmp(directory->d_name, searchFile) == 0){
+                if(strcmp(directory->d_name, searchFile) == 0){ // if it matches the desired file name
 
-                    char* printout = malloc((sizeof(INDENT)*numTabs) + sizeof(directory->d_name) * 2);
+                    // string to be printed out with file name and other info
+                    char* printout = malloc((sizeof(INDENT)*numTabs) + sizeof(directory->d_name) + sizeof(long int) + 9);
                     
-                    strcpy(printout, "");
-                    for(int i = 0; i < numTabs; i++){
+                    strcpy(printout, ""); // reset string just in case
+                    for(int i = 0; i < numTabs; i++){ // indenting
                         strcat(printout, INDENT);
                     }
+                    // another string to contain the byte size
                     char* size = malloc(sizeof(link.st_size));
                     sprintf(size, "%ld", link.st_size);
-                    strcat(printout, directory->d_name);
 
-                    
+                    // gross string operations. Lord forgive my soul
+                    strcat(printout, directory->d_name);
                     strcat(printout, " (");
                     strcat(printout, size);
                     strcat(printout, " bytes)");
 
-                    push(stack, printout);
+                    push(stack, printout); // add to stack!
 
                     free(size);
                     size = NULL;
-                    found = 1;
+                    found = 1; // matching file was found, return 1 so parent directories know
                 }
             }
         }
     }
-    closedir(dir);
-    return found;
+    closedir(dir); // close the directory
+    return found; // return if it was found :)
 }
 
-
+/**
+ * lsFull takes in a starting directory, and recursively spits out all of the
+ * decendant directories and files.
+ * 
+ * @param char* filename - the file to search through
+ * @param int numTabs - the depth of the recursion to indicate how much tabbing needs to be printed
+*/
 
 void lsFull(char* filename, int numTabs){
     DIR* dir = opendir(filename);
@@ -123,49 +145,55 @@ void lsFull(char* filename, int numTabs){
         return;
     }
     
-    while((directory = readdir(dir)) != NULL){
+    while((directory = readdir(dir)) != NULL){ // scan through directory
 
+        // create string w/ full directory name
         char *global_path = malloc(sizeof(char)*4096);
         getcwd(global_path, 4096);
-        
         strcat(global_path, "/");
         strcat(global_path, filename);
         strcat(global_path, directory->d_name);
         
-
+        // get data
         int success = lstat(global_path, &link);
         free(global_path);
         global_path = NULL;
         
 
-        if (success == 0){
+        if (success == 0){ // if file is successfully loaded
             if(S_ISDIR(link.st_mode)){ // if this is a directory
-                //printf("%s", directory->d_name);
+
+                // if directory is not ./ or ../
                 if(strcmp(directory->d_name, ".") != 0 && strcmp(directory->d_name, "..") != 0){
-                    for(int i = 0; i < numTabs; i++){
+                    
+                    for(int i = 0; i < numTabs; i++){// tabbing
                         printf("%s", INDENT);
                     }
+                    // print out directory info
                     printf("%s/ (directory)\n", directory -> d_name);
-                    char *input = malloc(sizeof(directory->d_name)+sizeof(char));
 
+                    // set up name of file for recursion
+                    char *input = malloc(sizeof(directory->d_name)+sizeof(char));
                     strcpy(input, filename);
                     strcat(input, directory->d_name);
                     strcat(input, "/");
             
-                    lsFull(input, numTabs+1);
+                    lsFull(input, numTabs+1); // recurse!
                     free(input);
                     input = NULL;
                 }
             }
+
             else if(S_ISREG(link.st_mode)){ // if it is a regular file
 
-                for(int i = 0; i < numTabs; i++){
+                for(int i = 0; i < numTabs; i++){ // tabbing
                     printf("%s", INDENT);
                 }
+                // print out file info
                 printf("%s (%ld bytes)\n", directory -> d_name, link.st_size);
                 
             }
         }
     }
-    
+    closedir(dir);
 }
